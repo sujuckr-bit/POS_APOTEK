@@ -38,8 +38,8 @@ export async function persistTransaction({
       product_id: line.product.id,
       product_name: line.product.name,
       quantity: line.quantity,
-      unit_price: line.product.price,
-      line_total: line.product.price * line.quantity,
+      unit_price: line.unit.price,
+      line_total: line.unit.price * line.quantity,
       allocations: line.allocations,
     })),
   )
