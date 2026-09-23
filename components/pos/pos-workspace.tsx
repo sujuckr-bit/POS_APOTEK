@@ -99,7 +99,7 @@ export default function PosWorkspace() {
     setProcessing(true)
     setPaymentError('')
     try {
-      const transaction = await persistTransaction({ cart, paymentMethod, subtotal, total })
+      const transaction = await persistTransaction({ cart, paymentMethod })
       setTransactionNumber(transaction.transaction_number)
       setDialog('success')
     } catch (error) {

@@ -4,14 +4,17 @@ import type { CartLine, PaymentMethod } from '@/components/pos/pos-types'
 export async function persistTransaction({
   cart,
   paymentMethod,
-  subtotal,
-  total,
 }: {
   cart: CartLine[]
   paymentMethod: PaymentMethod
-  subtotal: number
-  total: number
 }) {
+  if (cart.length === 0) throw new Error('Keranjang masih kosong.')
+  if (cart.some((line) => !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity * line.unit.conversionFactor > line.product.availableStock)) {
+    throw new Error('Jumlah atau stok item tidak valid.')
+  }
+  const calculatedSubtotal = cart.reduce((sum, line) => sum + line.unit.price * line.quantity, 0)
+  if (!Number.isFinite(calculatedSubtotal) || calculatedSubtotal <= 0) throw new Error('Total transaksi tidak valid.')
+
   const supabase = createClient()
   const { data: authData, error: authError } = await supabase.auth.getUser()
   if (authError) throw authError
@@ -24,8 +27,8 @@ export async function persistTransaction({
       transaction_number: transactionNumber,
       cashier_id: authData.user.id,
       payment_method: paymentMethod,
-      subtotal,
-      total,
+      subtotal: calculatedSubtotal,
+      total: calculatedSubtotal,
     })
     .select('id, transaction_number')
     .single()
