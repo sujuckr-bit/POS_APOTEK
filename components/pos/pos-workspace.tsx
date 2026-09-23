@@ -46,7 +46,7 @@ function CashDialog({ total, onCancel, onConfirm }: { total: number; onCancel: (
     <div className="dialog-total"><span>Total tagihan</span><strong>{formatRupiah(total)}</strong></div>
     <label className="field-label" htmlFor="cash-received">Uang diterima</label><input id="cash-received" autoFocus className="cash-input" inputMode="numeric" value={received} onChange={(event) => setReceived(event.target.value.replace(/\D/g, ''))} placeholder="Rp 0" />
     <div className={`change-row ${change < 0 ? 'change-error' : ''}`}><span>{change < 0 ? 'Kurang' : 'Kembalian'}</span><strong>{formatRupiah(Math.abs(change))}</strong></div>
-    <div className="quick-amounts">{[50000, 100000, 200000].map((value) => <button type="button" key={value} onClick={() => setReceived(String(value))}>{formatRupiah(value)}</button>)}</div>
+    <div className="quick-amounts">{[total, Math.ceil(total / 50000) * 50000, Math.ceil(total / 100000) * 100000].filter((value, index, values) => values.indexOf(value) === index).map((value) => <button type="button" key={value} onClick={() => setReceived(String(value))}>{value === total ? 'Uang pas' : formatRupiah(value)}</button>)}</div>
     <div className="dialog-actions"><button type="button" className="button-secondary" onClick={onCancel}>Batal</button><button type="button" className="button-primary" disabled={change < 0} onClick={onConfirm}><Check size={17} /> Konfirmasi pembayaran</button></div>
   </section></div>
 }
