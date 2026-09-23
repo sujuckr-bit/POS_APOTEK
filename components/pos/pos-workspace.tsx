@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check, ChevronDown, ClipboardList, CreditCard, FileText, History, Home, LayoutDashboard, Menu, Package, Plus, QrCode, Receipt, Search, ShoppingCart, Trash2, UserRound, Wallet, X } from 'lucide-react'
 import { batchAllocations, demoProducts } from './pos-demo-data'
+import { persistTransaction } from '@/lib/transactions'
 import type { CartLine, PaymentMethod, Product } from './pos-types'
 import { formatRupiah } from './pos-types'
 
@@ -70,6 +71,8 @@ export default function PosWorkspace() {
   const [sheetOffset, setSheetOffset] = useState(0)
   const [dragStart, setDragStart] = useState<number | null>(null)
   const [processing, setProcessing] = useState(false)
+  const [transactionNumber, setTransactionNumber] = useState('')
+  const [paymentError, setPaymentError] = useState('')
 
   const results = useMemo(() => {
     const value = query.trim().toLowerCase()
@@ -89,8 +92,20 @@ export default function PosWorkspace() {
   }
 
   const updateQuantity = (id: string, next: number) => setCart((current) => current.map((line) => line.product.id === id ? { ...line, quantity: Math.max(1, Math.min(next, line.product.availableStock)), allocations: batchAllocations(id, Math.max(1, Math.min(next, line.product.availableStock))) } : line))
-  const completePayment = () => { setProcessing(true); window.setTimeout(() => { setProcessing(false); setDialog('success') }, 450) }
-  const newTransaction = () => { setCart([]); setQuery(''); setDialog(null) }
+  const completePayment = async () => {
+    setProcessing(true)
+    setPaymentError('')
+    try {
+      const transaction = await persistTransaction({ cart, paymentMethod, subtotal, total })
+      setTransactionNumber(transaction.transaction_number)
+      setDialog('success')
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : 'Transaksi gagal disimpan.')
+    } finally {
+      setProcessing(false)
+    }
+  }
+  const newTransaction = () => { setCart([]); setQuery(''); setTransactionNumber(''); setPaymentError(''); setDialog(null) }
 
   const selectSection = (label: string) => { setActiveSection(label); setNavOpen(false); setMenuSheetOpen(false); setSheetOffset(0) }
   const closeNavigation = () => setNavOpen(false)
@@ -108,6 +123,6 @@ export default function PosWorkspace() {
     </div>
     <nav className="mobile-bottom-nav" aria-label="Navigasi utama mobile"><button type="button" className={activeSection === 'Beranda' ? 'mobile-nav-active' : ''} onClick={() => selectSection('Beranda')}><Home size={19} /><span>Beranda</span></button><button type="button" className={activeSection === 'Produk' ? 'mobile-nav-active' : ''} onClick={() => selectSection('Produk')}><Package size={19} /><span>Produk</span></button><button type="button" className={activeSection === 'Kasir' ? 'mobile-nav-active mobile-nav-primary' : 'mobile-nav-primary'} onClick={() => selectSection('Kasir')}><ShoppingCart size={19} /><span>Kasir</span></button><button type="button" className={activeSection === 'Riwayat' ? 'mobile-nav-active' : ''} onClick={() => selectSection('Riwayat')}><History size={19} /><span>Riwayat</span></button><button type="button" className={menuSheetOpen ? 'mobile-nav-active' : ''} onClick={() => setMenuSheetOpen(true)}><Menu size={19} /><span>Menu</span></button></nav>
     {menuSheetOpen && <><button type="button" className="sheet-scrim" aria-label="Tutup menu" onClick={closeMenuSheet} /><section className="mobile-menu-sheet" style={{ transform: `translateY(${sheetOffset}px)` }} onPointerDown={(event) => { setDragStart(event.clientY); event.currentTarget.setPointerCapture(event.pointerId) }} onPointerMove={handleSheetPointerMove} onPointerUp={handleSheetPointerUp} aria-label="Semua menu"><div className="sheet-handle" /><div className="sheet-heading"><div><span className="eyebrow">Navigasi</span><h2>Semua menu</h2></div><button type="button" className="icon-button" onClick={closeMenuSheet} aria-label="Tutup menu"><X size={19} /></button></div><div className="sheet-menu-grid">{menuItems.map(({ label, icon: Icon }) => <button type="button" key={label} className={activeSection === label ? 'sheet-menu-active' : ''} onClick={() => selectSection(label)}><Icon size={19} /><span>{label}</span></button>)}</div><button type="button" className="sheet-menu-profile" onClick={() => setMenuSheetOpen(false)}><span className="avatar">AS</span><span><strong>Andi Saputra</strong><small>Kasir</small></span><ChevronDown size={16} /></button></section></>}
-    {dialog === 'cash' && <CashDialog total={total} onCancel={() => setDialog(null)} onConfirm={completePayment} />}{dialog === 'qris' && <QrisDialog total={total} onCancel={() => setDialog(null)} onConfirm={completePayment} />}{dialog === 'success' && <div className="dialog-backdrop"><section className="dialog success-dialog" role="dialog" aria-modal="true"><div className="success-mark"><Check size={30} /></div><span className="eyebrow">Pembayaran berhasil</span><h2>Transaksi selesai</h2><p>Nomor transaksi <strong>#TRX-260922-0042</strong> telah berhasil disimpan.</p><div className="dialog-total"><span>Total pembayaran</span><strong>{formatRupiah(total)}</strong></div><div className="dialog-actions"><button type="button" className="button-secondary" onClick={newTransaction}>Transaksi baru</button><button type="button" className="button-primary" onClick={newTransaction}><Receipt size={17} /> Lihat struk</button></div></section></div>}
+    {dialog === 'cash' && <CashDialog total={total} onCancel={() => setDialog(null)} onConfirm={completePayment} />}{dialog === 'qris' && <QrisDialog total={total} onCancel={() => setDialog(null)} onConfirm={completePayment} />}{paymentError && <div className="payment-error" role="alert">{paymentError}</div>}{dialog === 'success' && <div className="dialog-backdrop"><section className="dialog success-dialog" role="dialog" aria-modal="true"><div className="success-mark"><Check size={30} /></div><span className="eyebrow">Pembayaran berhasil</span><h2>Transaksi selesai</h2><p>Nomor transaksi <strong>#{transactionNumber}</strong> telah berhasil disimpan.</p><div className="dialog-total"><span>Total pembayaran</span><strong>{formatRupiah(total)}</strong></div><div className="dialog-actions"><button type="button" className="button-secondary" onClick={newTransaction}>Transaksi baru</button><button type="button" className="button-primary" onClick={newTransaction}><Receipt size={17} /> Lihat struk</button></div></section></div>}
   </main>
 }
