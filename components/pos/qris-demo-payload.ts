@@ -1,0 +1,5 @@
+export const qrisDemoPayload = {
+  merchantName: 'APOTEK RISYAH',
+  displayStatus: 'Menunggu konfirmasi kasir',
+  payloadSnapshot: '00020101021226580014ID.CO.QRIS.WWW01189360000000000000000202150303UMI5204581253033605802ID5908RISYAH6048JAKARTA6304DEMO',
+} as const
