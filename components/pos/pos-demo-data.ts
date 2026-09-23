@@ -1,19 +1,12 @@
 import type { Product } from './pos-types'
+import { masterProducts } from '@/components/master-data/master-data-types'
 
-const units = (basePrice: number, baseLabel: string, packLabel: string, packSize: number) => [
-  { label: baseLabel, price: basePrice, conversionFactor: 1 },
-  { label: packLabel, price: Math.round(basePrice * packSize * 0.92), conversionFactor: packSize },
-]
-
-export const demoProducts: Product[] = [
-  { id: 'amox', name: 'Amoxicillin 500 mg', genericName: 'Amoxicillin', strength: '500 mg', unitLabel: 'Strip', barcode: '899123456001', price: 18500, availableStock: 24, units: units(18500, 'Strip', 'Box', 10), status: 'available', requiresPrescription: true },
-  { id: 'para', name: 'Paracetamol 500 mg', genericName: 'Paracetamol', strength: '500 mg', unitLabel: 'Strip', barcode: '899123456002', price: 8500, availableStock: 68, units: units(8500, 'Strip', 'Box', 10), status: 'available' },
-  { id: 'omep', name: 'Omeprazole 20 mg', genericName: 'Omeprazole', strength: '20 mg', unitLabel: 'Strip', barcode: '899123456003', price: 12500, availableStock: 8, units: units(12500, 'Strip', 'Box', 10), status: 'low-stock' },
-  { id: 'cetir', name: 'Cetirizine 10 mg', genericName: 'Cetirizine', strength: '10 mg', unitLabel: 'Strip', barcode: '899123456004', price: 11000, availableStock: 0, status: 'unavailable' },
-  { id: 'vitc', name: 'Vitamin C 500 mg', genericName: 'Ascorbic Acid', strength: '500 mg', unitLabel: 'Botol', barcode: '899123456005', price: 26500, availableStock: 17, status: 'available' },
-  { id: 'antacid', name: 'Antasida Doen', genericName: 'Aluminium Hydroxide', strength: '60 ml', unitLabel: 'Botol', barcode: '899123456006', price: 9500, availableStock: 31, status: 'available' },
-]
-
+export const demoProducts: Product[] = masterProducts.filter((item) => item.active).map((item) => ({
+  id: item.id, name: item.name, genericName: item.genericName, strength: item.strength, unitLabel: item.baseUnit,
+  barcode: item.barcode, price: item.price, availableStock: item.availableStock,
+  units: item.units, status: item.availableStock === 0 ? 'unavailable' : item.availableStock <= item.minimumStock ? 'low-stock' : 'available',
+  requiresPrescription: item.requiresPrescription,
+}))
 export const batchAllocations = (productId: string, quantity: number) => {
   const product = demoProducts.find((item) => item.id === productId)
   if (!product) return []
