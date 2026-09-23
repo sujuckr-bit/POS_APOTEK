@@ -1,5 +1,11 @@
 export type ProductStatus = 'available' | 'low-stock' | 'unavailable' | 'expired'
 
+export type ProductUnit = {
+  label: string
+  price: number
+  conversionFactor: number
+}
+
 export type Product = {
   id: string
   name: string
@@ -10,12 +16,14 @@ export type Product = {
   price: number
   availableStock: number
   status: ProductStatus
+  units?: ProductUnit[]
   requiresPrescription?: boolean
 }
 
 export type CartLine = {
   product: Product
   quantity: number
+  unit: ProductUnit
   allocations: { batch: string; expiry: string; quantity: number }[]
 }
 
