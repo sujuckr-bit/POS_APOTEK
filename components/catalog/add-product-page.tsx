@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { CircleHelp, Plus, Trash2, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { saveProduct as persistProduct } from '@/lib/products'
 
 type PackageRow = { id: number; name: string; abbreviation: string; quantity: string; unit: string }
 type ProductDraft = { name: string; unit: string; abbreviation: string; hasTax: boolean; group: string; category: string; composition: string; shortComposition: string; packages: PackageRow[] }
@@ -21,14 +22,34 @@ export default function AddProductPage() {
   const [composition, setComposition] = useState('')
   const [shortComposition, setShortComposition] = useState('')
   const [saveMessage, setSaveMessage] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
   const packageLoaded = useRef(false)
 
-  function saveProduct(event: React.FormEvent<HTMLFormElement>) {
+  async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!productName.trim() || !unit.trim() || !abbreviation.trim() || !group || !category) return
-    const draft: ProductDraft = { name: productName.trim(), unit: unit.trim(), abbreviation: abbreviation.trim().toLowerCase(), hasTax, group, category, composition: composition.trim(), shortComposition: shortComposition.trim(), packages }
-    sessionStorage.setItem('pos-apotek-product-draft', JSON.stringify(draft))
-    setSaveMessage('Data produk siap disimpan. Hubungkan ke database untuk menyimpan permanen.')
+    if (!productName.trim() || !unit.trim() || !abbreviation.trim() || !group || !category || isSaving) return
+    setIsSaving(true)
+    setSaveMessage('Menyimpan produk...')
+    try {
+      const product = await persistProduct({
+        name: productName,
+        unit,
+        abbreviation,
+        hasTax,
+        group,
+        category,
+        composition,
+        shortComposition,
+        packages: packages.map((item) => ({ ...item, quantity: Number(item.quantity) })),
+      })
+      sessionStorage.removeItem('pos-apotek-product-draft')
+      setSaveMessage(`Produk berhasil disimpan dengan SKU ${product.sku}.`)
+      setPackages([])
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : 'Produk gagal disimpan. Silakan coba lagi.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   useEffect(() => {
@@ -73,7 +94,7 @@ export default function AddProductPage() {
       <header className="product-form-header">
         <Link href="/katalog" className="product-form-close" aria-label="Kembali ke katalog"><X size={25} /></Link>
         <strong>Katalog</strong>
-        <button type="submit" form="add-product-form" className="product-form-save">Simpan</button>
+        <button type="submit" form="add-product-form" className="product-form-save" disabled={isSaving}>{isSaving ? 'Menyimpan...' : 'Simpan'}</button>
       </header>
 
       <form id="add-product-form" className="product-form" onSubmit={saveProduct}>
