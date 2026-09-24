@@ -20,8 +20,19 @@ export default function AddPackagePage() {
 
   function savePackage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const packageData = encodeURIComponent(JSON.stringify({ name, abbreviation, quantity: Number(quantity), unit }))
-    router.push(`/katalog/tambah?unit=${encodeURIComponent(smallestUnit)}&package=${packageData}`)
+    const packageValue = { id: Date.now(), name, abbreviation, quantity: String(Number(quantity)), unit }
+    const draftValue = searchParams.get('draft')
+    if (draftValue) {
+      try {
+        const draft = JSON.parse(draftValue) as { packages?: unknown[] }
+        draft.packages = [...(draft.packages || []), packageValue]
+        router.push(`/katalog/tambah?draft=${encodeURIComponent(JSON.stringify(draft))}`)
+        return
+      } catch {
+        // Fall through to the package-only return when an old draft cannot be decoded.
+      }
+    }
+    router.push(`/katalog/tambah?unit=${encodeURIComponent(smallestUnit)}&package=${encodeURIComponent(JSON.stringify({ name, abbreviation, quantity: Number(quantity), unit }))}`)
   }
 
   return (
