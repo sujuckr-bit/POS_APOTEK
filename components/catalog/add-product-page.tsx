@@ -117,10 +117,14 @@ export default function AddProductPage() {
         setPackages((current) => [...current, { ...saved, id: Date.now(), quantity: String(saved.quantity) }])
       }
       sessionStorage.removeItem('pos-apotek-product-draft')
-      router.replace('/katalog/tambah')
+      const nextParams = new URLSearchParams()
+      if (searchParams.get('edit')) nextParams.set('edit', searchParams.get('edit') as string)
+      router.replace(`/katalog/tambah${nextParams.size ? `?${nextParams.toString()}` : ''}`)
     } catch {
       sessionStorage.removeItem('pos-apotek-product-draft')
-      router.replace('/katalog/tambah')
+      const nextParams = new URLSearchParams()
+      if (searchParams.get('edit')) nextParams.set('edit', searchParams.get('edit') as string)
+      router.replace(`/katalog/tambah${nextParams.size ? `?${nextParams.toString()}` : ''}`)
     }
   }, [router, searchParams])
   const [hasTax, setHasTax] = useState(true)
