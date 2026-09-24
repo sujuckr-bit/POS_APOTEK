@@ -28,7 +28,8 @@ export default function AddPackagePage() {
   function savePackage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const packageValue = { id: Date.now(), name, abbreviation, quantity: String(Number(quantity)), unit }
-    router.push(`/katalog/tambah?unit=${encodeURIComponent(smallestUnit)}&package=${encodeURIComponent(JSON.stringify(packageValue))}`)
+    const edit = searchParams.get('edit')
+    router.push(`/katalog/tambah?unit=${encodeURIComponent(smallestUnit)}&package=${encodeURIComponent(JSON.stringify(packageValue))}${edit ? `&edit=${encodeURIComponent(edit)}` : ''}`)
   }
 
   return (

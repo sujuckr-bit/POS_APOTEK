@@ -40,6 +40,7 @@ export default function AddProductPage() {
       setCategory(categoryValue ?? '')
       setComposition(product.composition ?? '')
       setShortComposition(product.short_composition ?? '')
+      setPackages((product.product_packaging ?? []).map((item, index) => ({ id: index + 1, name: item.name, abbreviation: item.abbreviation, quantity: String(item.quantity), unit: item.units?.name ?? unitValue?.name ?? '' })))
     }).catch(() => setSaveMessage('Data produk gagal dimuat.'))
   }, [editId])
 
@@ -156,7 +157,7 @@ export default function AddProductPage() {
           <h2>Satuan &amp; kemasan</h2>
           <div className="product-tip"><CircleHelp size={22} /><p><strong>Tips</strong>Untuk memudahkan, buat kemasan dari kecil (contoh: strip isi 8 tablet) ke besar (contoh: box isi 10 strip).</p></div>
           <div className="package-list">{packages.map((item) => <div className="package-row" key={item.id}><label className="product-field">Nama kemasan<input value={item.name} onChange={(event) => updatePackage(item.id, 'name', event.target.value)} /></label><label className="product-field">Singkatan<input value={item.abbreviation} maxLength={3} onChange={(event) => updatePackage(item.id, 'abbreviation', event.target.value)} /></label><label className="product-field">Isi ({item.unit})<input type="number" min="1" value={item.quantity} onChange={(event) => updatePackage(item.id, 'quantity', event.target.value)} /></label><button type="button" className="package-remove" onClick={() => setPackages((current) => current.filter((row) => row.id !== item.id))} aria-label="Hapus kemasan"><Trash2 size={18} /></button></div>)}</div>
-          <button type="button" className="package-add" onClick={() => { const draft: ProductDraft = { name: productName, unit, abbreviation, hasTax, group, category, composition, shortComposition, packages }; sessionStorage.setItem('pos-apotek-product-draft', JSON.stringify(draft)); const options = encodeURIComponent(JSON.stringify(packages.map(({ name, abbreviation, quantity, unit: packageUnit }) => ({ name, abbreviation, quantity: Number(quantity), unit: packageUnit })))); router.push(`/katalog/tambah/kemasan?unit=${encodeURIComponent(unit)}&options=${options}`) }} disabled={!unit}><Plus size={21} /> Satuan/kemasan</button>
+          <button type="button" className="package-add" onClick={() => { const draft: ProductDraft = { name: productName, unit, abbreviation, hasTax, group, category, composition, shortComposition, packages }; sessionStorage.setItem('pos-apotek-product-draft', JSON.stringify(draft)); const options = encodeURIComponent(JSON.stringify(packages.map(({ name, abbreviation, quantity, unit: packageUnit }) => ({ name, abbreviation, quantity: Number(quantity), unit: packageUnit })))); router.push(`/katalog/tambah/kemasan?unit=${encodeURIComponent(unit)}&options=${options}${editId ? `&edit=${encodeURIComponent(editId)}` : ''}`) }} disabled={!unit}><Plus size={21} /> Satuan/kemasan</button>
         </section>
 
         <section className="product-form-section product-info-section">
