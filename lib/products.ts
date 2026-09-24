@@ -43,7 +43,7 @@ async function findOrCreateUnit(name: string, abbreviation: string, conversionFa
 }
 
 export type ProductListItem = { id: string; name: string; sku: string; stock: number | null; units: { name: string; abbreviation: string } | null }
-export type ProductDetails = { id: string; name: string; abbreviation: string | null; medicine_group: string | null; composition: string | null; short_composition: string | null; has_tax: boolean; units: { name: string; abbreviation: string } | null; product_categories: { name: string } | null }
+export type ProductDetails = { id: string; name: string; abbreviation: string | null; medicine_group: string | null; composition: string | null; short_composition: string | null; has_tax: boolean; units: { name: string; abbreviation: string } | null; product_categories: { name: string } | null; product_packaging: { id: string; name: string; abbreviation: string; quantity: number; units: { name: string } | null }[] }
 
 export async function listProducts(): Promise<ProductListItem[]> {
   const supabase = createClient()
@@ -54,7 +54,7 @@ export async function listProducts(): Promise<ProductListItem[]> {
 
 export async function getProduct(id: string): Promise<ProductDetails> {
   const supabase = createClient()
-  const { data, error } = await supabase.from('products').select('id, name, abbreviation, medicine_group, composition, short_composition, has_tax, unit_id, category_id, product_categories(name), units(name, abbreviation)').eq('id', id).single()
+  const { data, error } = await supabase.from('products').select('id, name, abbreviation, medicine_group, composition, short_composition, has_tax, unit_id, category_id, product_categories(name), units(name, abbreviation), product_packaging(id, name, abbreviation, quantity, units(name))').eq('id', id).single()
   if (error) throw error
   return data as ProductDetails
 }
@@ -69,7 +69,7 @@ export async function updateProduct(id: string, input: SaveProductInput) {
   if (error) throw error
   const { error: deletePackagesError } = await supabase.from('product_packaging').delete().eq('product_id', id)
   if (deletePackagesError) throw deletePackagesError
-  const packagingRows = input.packages.map((item) => ({ product_id: id, name: item.name.trim(), abbreviation: item.abbreviation.trim().toLowerCase(), quantity: Number(item.quantity), unit_id: unitId }))
+  const packagingRows = await Promise.all(input.packages.map(async (item) => ({ product_id: id, name: item.name.trim(), abbreviation: item.abbreviation.trim().toLowerCase(), quantity: Number(item.quantity), unit_id: await findOrCreateUnit(item.unit || item.name, item.abbreviation, Number(item.quantity)) })))
   if (packagingRows.length) {
     const { error: packageError } = await supabase.from('product_packaging').insert(packagingRows)
     if (packageError) throw packageError
