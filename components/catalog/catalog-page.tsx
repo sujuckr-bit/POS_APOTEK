@@ -41,6 +41,7 @@ export default function CatalogPage() {
         <header className="page-header catalog-header">
           <a className="icon-button" href="/" aria-label="Kembali ke kasir"><ArrowLeft size={20} /></a>
           <div><h1>Katalog Produk</h1></div>
+          <a className="catalog-add-product" href="/katalog/tambah">Tambah produk</a>
           <div className="header-actions"><span className="branch-chip"><span className="online-dot" /> Apotek Risyah · Cabang utama</span><button type="button" className="icon-button" aria-label="Profil pengguna"><UserRound size={18} /></button></div>
         </header>
 
