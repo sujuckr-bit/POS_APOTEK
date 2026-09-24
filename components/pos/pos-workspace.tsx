@@ -33,8 +33,7 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: () => void }
     <button type="button" disabled={unavailable} onClick={onAdd} className="product-card" aria-label={`Tambah ${product.name}`}>
       <div className="product-card-top"><span className="product-code">{product.barcode}</span><span className={`status status-${product.status}`}>{statusLabel(product)}</span></div>
       <strong>{product.name}</strong>
-      <span className="product-generic">{product.genericName} · {product.unitLabel}</span>
-      <div className="product-card-bottom"><b>{formatRupiah(product.price)}</b><span>{product.availableStock} {product.unitLabel.toLowerCase()}</span></div>
+          <div className="product-card-bottom"><b>{formatRupiah(product.price)}</b><span>{product.availableStock} {product.unitLabel.toLowerCase()}</span></div>
     </button>
   )
 }
