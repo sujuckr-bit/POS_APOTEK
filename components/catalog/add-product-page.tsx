@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { CircleHelp, Plus, Trash2, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getProduct, saveProduct as persistProduct, updateProduct as persistProductUpdate } from '@/lib/products'
+import { deactivateProduct, getProduct, saveProduct as persistProduct, updateProduct as persistProductUpdate } from '@/lib/products'
 
 type PackageRow = { id: number; name: string; abbreviation: string; quantity: string; unit: string }
 type ProductDraft = { name: string; unit: string; abbreviation: string; hasTax: boolean; group: string; category: string; composition: string; shortComposition: string; packages: PackageRow[] }
@@ -42,6 +42,18 @@ export default function AddProductPage() {
       setShortComposition(product.short_composition ?? '')
     }).catch(() => setSaveMessage('Data produk gagal dimuat.'))
   }, [editId])
+
+  async function removeProduct() {
+    if (!editId || !window.confirm(`Nonaktifkan produk "${productName}"?`)) return
+    setIsSaving(true)
+    try {
+      await deactivateProduct(editId)
+      router.push('/katalog')
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : 'Produk gagal dinonaktifkan.')
+      setIsSaving(false)
+    }
+  }
 
   async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -150,6 +162,7 @@ export default function AddProductPage() {
           <label className="product-field">Kategori<select value={category} onChange={(event) => setCategory(event.target.value)} required><option value="">Pilih kategori</option>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label className="product-field">Komposisi<textarea name="composition" rows={4} value={composition} onChange={(event) => setComposition(event.target.value)} /></label>
           <label className="product-field">Komposisi singkat<textarea name="shortComposition" rows={4} value={shortComposition} onChange={(event) => setShortComposition(event.target.value)} /></label>
+          {isEditing && <button type="button" className="product-deactivate" onClick={removeProduct} disabled={isSaving}>Nonaktifkan produk</button>}
         </section>
       </form>
     </main>
