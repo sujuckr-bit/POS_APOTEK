@@ -1,12 +1,14 @@
 import type { Product } from './pos-types'
-import { masterProducts } from '@/components/master-data/master-data-types'
 
-export const demoProducts: Product[] = masterProducts.filter((item) => item.active).map((item) => ({
-  id: item.id, name: item.name, genericName: item.genericName, strength: item.strength, unitLabel: item.baseUnit,
-  barcode: item.barcode, price: item.price, availableStock: item.availableStock,
-  units: item.units, status: item.availableStock === 0 ? 'unavailable' : item.availableStock <= item.minimumStock ? 'low-stock' : 'available',
-  requiresPrescription: item.requiresPrescription,
-}))
+const unit = (label: string, price: number, conversionFactor = 1) => ({ label, price, conversionFactor })
+
+export const demoProducts: Product[] = [
+  { id: 'amox', name: 'Amoxicillin 500 mg', genericName: 'Amoxicillin', strength: '500 mg', unitLabel: 'Strip', barcode: '899123456001', price: 18500, availableStock: 24, units: [unit('Strip', 18500), unit('Box', 170200, 10)], status: 'available', requiresPrescription: true },
+  { id: 'para', name: 'Paracetamol 500 mg', genericName: 'Paracetamol', strength: '500 mg', unitLabel: 'Strip', barcode: '899123456002', price: 8500, availableStock: 68, units: [unit('Strip', 8500), unit('Box', 78200, 10)], status: 'available' },
+  { id: 'omep', name: 'Omeprazole 20 mg', genericName: 'Omeprazole', strength: '20 mg', unitLabel: 'Strip', barcode: '899123456003', price: 12500, availableStock: 8, units: [unit('Strip', 12500), unit('Box', 115000, 10)], status: 'low-stock' },
+  { id: 'vitc', name: 'Vitamin C 500 mg', genericName: 'Ascorbic Acid', strength: '500 mg', unitLabel: 'Botol', barcode: '899123456005', price: 26500, availableStock: 17, units: [unit('Botol', 26500)], status: 'available' },
+]
+
 export const batchAllocations = (productId: string, quantity: number) => {
   const product = demoProducts.find((item) => item.id === productId)
   if (!product) return []
