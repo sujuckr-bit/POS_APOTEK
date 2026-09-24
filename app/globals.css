@@ -119,7 +119,7 @@ body { font-family: var(--font-inter), Arial, Helvetica, sans-serif; font-size: 
 .sidebar-collapse { transform: rotate(90deg); margin-left: auto; }.sidebar-collapsed .sidebar { width: 76px; flex-basis: 76px; padding-left: 10px; padding-right: 10px; }.sidebar-collapsed .brand { justify-content: center; padding-left: 0; padding-right: 0; }.sidebar-collapsed .brand-copy, .sidebar-collapsed .nav-item span, .sidebar-collapsed .sidebar-bottom { display: none; }.sidebar-collapsed .sidebar-collapse { transform: rotate(-90deg); margin-left: 0; }.sidebar-collapsed .nav-item { justify-content: center; padding: 0; }.sidebar-collapsed .sidebar nav { gap: 8px; }.nav-scrim, .mobile-bottom-nav, .mobile-cart-popup { display: none; }
 @media (max-width: 980px) {
   .sidebar-collapse { display: none; }
-  .pos-app { padding-bottom: 76px; }
+  .pos-app { padding-bottom: 0; }
   .sidebar { display: none; }
   .cart-panel { display: none; }
   .mobile-cart-popup { display: block; }
@@ -130,7 +130,7 @@ body { font-family: var(--font-inter), Arial, Helvetica, sans-serif; font-size: 
   .mobile-bottom-nav button:hover, .mobile-bottom-nav .mobile-nav-active { background: #dcece7; color: #14665e; }
   .mobile-bottom-nav .mobile-nav-primary { color: #fffdf8; background: #16746b; border-radius: 8px; margin: -14px 6px 0; min-height: 66px; box-shadow: 0 5px 14px #16746b38; }
   .mobile-bottom-nav   .mobile-nav-primary.mobile-nav-active, .mobile-bottom-nav .mobile-nav-primary:hover { background: #105c55; color: #fffdf8; }
-  .mobile-cart-popup { position: fixed; z-index: 39; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); padding: 10px; border: 1px solid #d9dfd9; border-radius: 10px; background: #fffdf8; box-shadow: 0 -8px 26px #2035361c; }
+  .mobile-cart-popup { position: fixed; z-index: 39; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); padding: 10px; border: 1px solid #d9dfd9; border-radius: 10px; background: #fffdf8; box-shadow: 0 -8px 26px #2035361c; }
   .mobile-cart-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .mobile-cart-count { display: flex; align-items: center; gap: 7px; color: #14665e; min-width: 0; }.mobile-cart-count strong { font-size: 11px; white-space: nowrap; }.mobile-cart-count span { color: #1d2a2b; font-size: 13px; font-weight: 700; white-space: nowrap; }
   .mobile-cart-pay { border: 0; border-radius: 5px; background: #16746b; color: #fff; min-height: 36px; padding: 0 13px; font-size: 11px; font-weight: 700; white-space: nowrap; }.mobile-cart-pay:hover { background: #105c55; }
