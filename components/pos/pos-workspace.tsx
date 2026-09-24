@@ -113,7 +113,7 @@ export default function PosWorkspace() {
   }
   const newTransaction = () => { setCart([]); setQuery(''); setTransactionNumber(''); setPaymentError(''); setDialog(null) }
 
-  const selectSection = (label: string) => { setActiveSection(label); setNavOpen(false); setMenuSheetOpen(false); setSheetOffset(0); if (label === 'Katalog') router.push('/katalog') }
+  const selectSection = (label: string) => { setNavOpen(false); setMenuSheetOpen(false); setSheetOffset(0); if (label === 'Katalog') { router.push('/katalog'); return }; setActiveSection(label) }
   const closeNavigation = () => setNavOpen(false)
   const closeMenuSheet = () => { setMenuSheetOpen(false); setSheetOffset(0) }
   const handleSheetPointerMove = (event: React.PointerEvent<HTMLElement>) => { if (dragStart !== null) setSheetOffset(Math.max(0, event.clientY - dragStart)) }
