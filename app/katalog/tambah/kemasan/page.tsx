@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import AddPackagePage from '@/components/catalog/add-package-page'
 
 export const metadata = {
@@ -6,5 +7,5 @@ export const metadata = {
 }
 
 export default function AddPackageRoute() {
-  return <AddPackagePage />
+  return <Suspense fallback={null}><AddPackagePage /></Suspense>
 }
