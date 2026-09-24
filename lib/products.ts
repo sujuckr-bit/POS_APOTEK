@@ -42,6 +42,47 @@ async function findOrCreateUnit(name: string, abbreviation: string, conversionFa
   return data.id
 }
 
+export type ProductListItem = { id: string; name: string; sku: string; stock: number | null; units: { name: string; abbreviation: string } | null }
+export type ProductDetails = { id: string; name: string; abbreviation: string | null; medicine_group: string | null; composition: string | null; short_composition: string | null; has_tax: boolean; units: { name: string; abbreviation: string } | null; product_categories: { name: string } | null }
+
+export async function listProducts(): Promise<ProductListItem[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase.from('products').select('id, name, sku, stock, unit_id, is_active, units(name, abbreviation)').eq('is_active', true).order('name')
+  if (error) throw error
+  return (data ?? []) as ProductListItem[]
+}
+
+export async function getProduct(id: string): Promise<ProductDetails> {
+  const supabase = createClient()
+  const { data, error } = await supabase.from('products').select('id, name, abbreviation, medicine_group, composition, short_composition, has_tax, unit_id, category_id, product_categories(name), units(name, abbreviation)').eq('id', id).single()
+  if (error) throw error
+  return data as ProductDetails
+}
+
+export async function updateProduct(id: string, input: SaveProductInput) {
+  const supabase = createClient()
+  const { data: category, error: categoryError } = await supabase.from('product_categories').select('id').eq('name', input.category.trim()).maybeSingle()
+  if (categoryError) throw categoryError
+  if (!category) throw new Error(`Kategori "${input.category.trim()}" belum tersedia di master data.`)
+  const unitId = await findOrCreateUnit(input.unit, input.abbreviation, 1)
+  const { data: product, error } = await supabase.from('products').update({ name: input.name.trim(), category_id: category.id, unit_id: unitId, abbreviation: input.abbreviation.trim().toLowerCase(), medicine_group: input.group.trim(), composition: input.composition.trim() || null, short_composition: input.shortComposition.trim() || null, has_tax: input.hasTax }).eq('id', id).select('id, sku').single()
+  if (error) throw error
+  const { error: deletePackagesError } = await supabase.from('product_packaging').delete().eq('product_id', id)
+  if (deletePackagesError) throw deletePackagesError
+  const packagingRows = input.packages.map((item) => ({ product_id: id, name: item.name.trim(), abbreviation: item.abbreviation.trim().toLowerCase(), quantity: Number(item.quantity), unit_id: unitId }))
+  if (packagingRows.length) {
+    const { error: packageError } = await supabase.from('product_packaging').insert(packagingRows)
+    if (packageError) throw packageError
+  }
+  return product
+}
+
+export async function deactivateProduct(id: string) {
+  const supabase = createClient()
+  const { error } = await supabase.from('products').update({ is_active: false }).eq('id', id)
+  if (error) throw error
+}
+
 export async function saveProduct(input: SaveProductInput) {
   const supabase = createClient()
   const categoryName = input.category.trim()

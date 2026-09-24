@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { CircleHelp, Plus, Trash2, X } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { saveProduct as persistProduct } from '@/lib/products'
+import { getProduct, saveProduct as persistProduct, updateProduct as persistProductUpdate } from '@/lib/products'
 
 type PackageRow = { id: number; name: string; abbreviation: string; quantity: string; unit: string }
 type ProductDraft = { name: string; unit: string; abbreviation: string; hasTax: boolean; group: string; category: string; composition: string; shortComposition: string; packages: PackageRow[] }
@@ -24,6 +24,24 @@ export default function AddProductPage() {
   const [saveMessage, setSaveMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const packageLoaded = useRef(false)
+  const editId = searchParams.get('edit')
+  const isEditing = Boolean(editId)
+
+  useEffect(() => {
+    if (!editId) return
+    getProduct(editId).then((product) => {
+      const categoryValue = product.product_categories?.name
+      const unitValue = product.units
+      setProductName(product.name)
+      setAbbreviation(product.abbreviation ?? unitValue?.abbreviation ?? '')
+      setUnit(unitValue?.name ?? '')
+      setHasTax(product.has_tax)
+      setGroup(product.medicine_group ?? '')
+      setCategory(categoryValue ?? '')
+      setComposition(product.composition ?? '')
+      setShortComposition(product.short_composition ?? '')
+    }).catch(() => setSaveMessage('Data produk gagal dimuat.'))
+  }, [editId])
 
   async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -31,7 +49,19 @@ export default function AddProductPage() {
     setIsSaving(true)
     setSaveMessage('Menyimpan produk...')
     try {
-      const product = await persistProduct({
+      const product = isEditing && editId
+        ? await persistProductUpdate(editId, {
+          name: productName,
+          unit,
+          abbreviation,
+          hasTax,
+          group,
+          category,
+          composition,
+          shortComposition,
+          packages: packages.map((item) => ({ ...item, quantity: Number(item.quantity) })),
+        })
+        : await persistProduct({
         name: productName,
         unit,
         abbreviation,
@@ -94,11 +124,11 @@ export default function AddProductPage() {
       <header className="product-form-header">
         <Link href="/katalog" className="product-form-close" aria-label="Kembali ke katalog"><X size={25} /></Link>
         <strong>Katalog</strong>
-        <button type="submit" form="add-product-form" className="product-form-save" disabled={isSaving}>{isSaving ? 'Menyimpan...' : 'Simpan'}</button>
+        <button type="submit" form="add-product-form" className="product-form-save" disabled={isSaving}>{isSaving ? 'Menyimpan...' : isEditing ? 'Perbarui' : 'Simpan'}</button>
       </header>
 
       <form id="add-product-form" className="product-form" onSubmit={saveProduct}>
-        <h1>Buat barang</h1>
+        <h1>{isEditing ? 'Edit barang' : 'Buat barang'}</h1>
         {saveMessage && <p className="product-save-message" role="status">{saveMessage}</p>}
         <label className="product-field product-field-full">Nama barang<input name="name" value={productName} onChange={(event) => setProductName(event.target.value)} required autoFocus /></label>
         <div className="product-unit-grid">
