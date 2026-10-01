@@ -19,29 +19,6 @@ export type SaveProductInput = {
   packages: ProductPackageInput[]
 }
 
-async function findOrCreateUnit(name: string, abbreviation: string, conversionFactor: number) {
-  const supabase = createClient()
-  const normalizedName = name.trim().toLowerCase()
-  const { data: existing, error: lookupError } = await supabase
-    .from('units')
-    .select('id')
-    .eq('name', normalizedName)
-    .eq('abbreviation', abbreviation.trim().toLowerCase())
-    .maybeSingle()
-
-  if (lookupError) throw lookupError
-  if (existing) return existing.id
-
-  const { data, error } = await supabase
-    .from('units')
-    .insert({ name: normalizedName, abbreviation: abbreviation.trim().toLowerCase(), conversion_factor: conversionFactor })
-    .select('id')
-    .single()
-
-  if (error) throw error
-  return data.id
-}
-
 export type ProductListItem = { id: string; name: string; sku: string; stock: number | null; units: { name: string; abbreviation: string } | null }
 export type ProductDetails = { id: string; name: string; abbreviation: string | null; medicine_group: string | null; composition: string | null; short_composition: string | null; has_tax: boolean; units: { name: string; abbreviation: string } | null; product_categories: { name: string } | null; product_packaging: { id: string; name: string; abbreviation: string; quantity: number; units: { name: string } | null }[] }
 
@@ -59,81 +36,21 @@ export async function getProduct(id: string): Promise<ProductDetails> {
   return data as ProductDetails
 }
 
+async function request<T>(url: string, init: RequestInit) {
+  const response = await fetch(url, { ...init, headers: { 'Content-Type': 'application/json', ...init.headers } })
+  const body = response.status === 204 ? null : await response.json() as { error?: string } & T
+  if (!response.ok) throw new Error(body?.error ?? 'Operasi produk gagal.')
+  return body as T
+}
+
 export async function updateProduct(id: string, input: SaveProductInput) {
-  const supabase = createClient()
-  const { data: category, error: categoryError } = await supabase.from('product_categories').select('id').eq('name', input.category.trim()).maybeSingle()
-  if (categoryError) throw categoryError
-  if (!category) throw new Error(`Kategori "${input.category.trim()}" belum tersedia di master data.`)
-  const unitId = await findOrCreateUnit(input.unit, input.abbreviation, 1)
-  const { data: product, error } = await supabase.from('products').update({ name: input.name.trim(), category_id: category.id, unit_id: unitId, abbreviation: input.abbreviation.trim().toLowerCase(), medicine_group: input.group.trim(), composition: input.composition.trim() || null, short_composition: input.shortComposition.trim() || null, has_tax: input.hasTax }).eq('id', id).select('id, sku').single()
-  if (error) throw error
-  const { error: deletePackagesError } = await supabase.from('product_packaging').delete().eq('product_id', id)
-  if (deletePackagesError) throw deletePackagesError
-  const packagingRows = await Promise.all(input.packages.map(async (item) => ({ product_id: id, name: item.name.trim(), abbreviation: item.abbreviation.trim().toLowerCase(), quantity: Number(item.quantity), unit_id: await findOrCreateUnit(item.unit || item.name, item.abbreviation, Number(item.quantity)) })))
-  if (packagingRows.length) {
-    const { error: packageError } = await supabase.from('product_packaging').insert(packagingRows)
-    if (packageError) throw packageError
-  }
-  return product
+  return request<{ id: string; sku: string }>('/api/products', { method: 'PUT', body: JSON.stringify({ id, input }) })
 }
 
 export async function deactivateProduct(id: string) {
-  const supabase = createClient()
-  const { error } = await supabase.from('products').update({ is_active: false }).eq('id', id)
-  if (error) throw error
+  await request('/api/products?id=' + encodeURIComponent(id), { method: 'DELETE' })
 }
 
 export async function saveProduct(input: SaveProductInput) {
-  const supabase = createClient()
-  const categoryName = input.category.trim()
-  const { data: category, error: categoryError } = await supabase
-    .from('product_categories')
-    .select('id')
-    .eq('name', categoryName)
-    .maybeSingle()
-
-  if (categoryError) throw categoryError
-  if (!category) throw new Error(`Kategori "${categoryName}" belum tersedia di master data.`)
-
-  const baseUnitId = await findOrCreateUnit(input.unit, input.abbreviation, 1)
-  const { data: product, error: productError } = await supabase
-    .from('products')
-    .insert({
-      name: input.name.trim(),
-      category_id: category.id,
-      unit_id: baseUnitId,
-      abbreviation: input.abbreviation.trim().toLowerCase(),
-      medicine_group: input.group.trim(),
-      composition: input.composition.trim() || null,
-      short_composition: input.shortComposition.trim() || null,
-      has_tax: input.hasTax,
-    })
-    .select('id, sku')
-    .single()
-
-  if (productError) throw productError
-
-  try {
-    let conversion = 1
-    const packagingRows = []
-    for (const item of input.packages) {
-      const quantity = Number(item.quantity)
-      if (!item.name.trim() || !item.abbreviation.trim() || !Number.isFinite(quantity) || quantity <= 0) {
-        throw new Error('Data kemasan belum lengkap atau jumlahnya tidak valid.')
-      }
-      conversion *= quantity
-      const unitId = await findOrCreateUnit(item.name, item.abbreviation, conversion)
-      packagingRows.push({ product_id: product.id, name: item.name.trim(), abbreviation: item.abbreviation.trim().toLowerCase(), quantity, unit_id: unitId })
-    }
-
-    if (packagingRows.length) {
-      const { error: packageError } = await supabase.from('product_packaging').insert(packagingRows)
-      if (packageError) throw packageError
-    }
-  } catch (error) {
-    await supabase.from('products').delete().eq('id', product.id)
-    throw error
-  }
-
-  return product
+  return request<{ id: string; sku: string }>('/api/products', { method: 'POST', body: JSON.stringify(input) })
 }
