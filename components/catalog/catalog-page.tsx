@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import useSWR from 'swr'
-import { ArrowLeft, ChevronDown, Filter, Pencil, Search, SlidersHorizontal, UserRound } from 'lucide-react'
+import { ArrowLeft, ChevronDown, Filter, Pencil, Search, Settings2, SlidersHorizontal, UserRound } from 'lucide-react'
 import { listProducts } from '@/lib/products'
 import { formatRupiah } from '@/components/pos/pos-types'
 
@@ -26,6 +26,7 @@ export default function CatalogPage() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<FilterValue>('all')
   const [filterOpen, setFilterOpen] = useState(false)
+  const [actionOpen, setActionOpen] = useState(false)
   const { data: storedProducts, mutate, error } = useSWR('catalog-products', listProducts)
 
   const products = useMemo(() => {
@@ -45,7 +46,16 @@ export default function CatalogPage() {
         <header className="page-header catalog-header">
           <a className="icon-button" href="/" aria-label="Kembali ke kasir"><ArrowLeft size={20} /></a>
           <div><h1>Katalog Produk</h1></div>
-          <a className="catalog-add-product" href="/katalog/tambah">Tambah produk</a>
+          <div className="catalog-header-actions">
+            <a className="catalog-add-product" href="/katalog/tambah">Tambah produk</a>
+            <div className="catalog-action-wrap">
+              <button type="button" className="catalog-more-button" onClick={() => setActionOpen((open) => !open)} aria-expanded={actionOpen} aria-haspopup="menu"><Settings2 size={15} /> Aksi lainnya <ChevronDown size={15} /></button>
+              {actionOpen && <div className="catalog-action-menu" role="menu">
+                <a href="/katalog/kategori-satuan" role="menuitem" onClick={() => setActionOpen(false)}>Kelola kategori dan satuan</a>
+                <a href="/katalog/supplier" role="menuitem" onClick={() => setActionOpen(false)}>Kelola supplier</a>
+              </div>}
+            </div>
+          </div>
           <div className="header-actions"><span className="branch-chip"><span className="online-dot" /> Apotek Risyah · Cabang utama</span><button type="button" className="icon-button" aria-label="Profil pengguna"><UserRound size={18} /></button></div>
         </header>
 
